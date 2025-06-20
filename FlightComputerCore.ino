@@ -9,24 +9,25 @@
                                               // or does non-trivial work, we would not run out of stack or flash (initial).
 
 /// MS5611 / ALTITUDE THRESHOLDS
-static constexpr float ALT_THRESHOLD_GREEN        = 3.0F;       // in meters (simulating liftoff detection)
-static constexpr float ALT_THRESHOLD_RED          = 5.0F;       // in meters (simulating APOGEE)
-static constexpr float ALT_RESET_THRESHOLD        = 2.0F;       // in meters (simulating touchdown detection)
+static constexpr float            ALT_THRESHOLD_GREEN         = 3.0F;               // in meters (simulating liftoff detection)
+static constexpr float            ALT_THRESHOLD_RED           = 5.0F;               // in meters (simulating APOGEE)
+static constexpr float            ALT_RESET_THRESHOLD         = 2.0F;               // in meters (simulating touchdown detection)
 
 /// TIMING / BUFFER 
-static constexpr unsigned long LOOP_INTERVAL_MS   = 300UL;      // main loop interval
-static constexpr unsigned long RESET_SAVE_PERIOD  = 3000UL;     // 3 seconds after ALT_RESET_THRESHOLD
-static constexpr int           BUFFER_SIZE        = 10;         // ten entries * 300 ms = 3 seconds
+static constexpr unsigned long    LOOP_INTERVAL_MS            = 300UL;              // main loop interval
+static constexpr unsigned long    RESET_SAVE_PERIOD           = 3000UL;             // 3 seconds after ALT_RESET_THRESHOLD
+static constexpr int              BUFFER_SIZE                 = 10;                 // ten entries * 300 ms = 3 seconds
 
 /// PIN ASSIGNMENTS FOR LED AND BUZZER
-static constexpr int PIN_GREEN_LED                = 19;                             // Pin for Green LED
-static constexpr int PIN_RED_LED                  = 18;                             // Pin for Red LED
-static constexpr int PIN_BUZZER                   = 4;                              // (unused for now, but reserved)
+static constexpr int              PIN_GREEN_LED                = 19;                // Pin for Green LED
+static constexpr int              PIN_RED_LED                  = 18;                // Pin for Red LED
+static constexpr int              PIN_BUZZER                   = 4;                 // (unused for now, but reserved)
+
 static constexpr int OUTPUT_PINS[] = { PIN_GREEN_LED, PIN_RED_LED, PIN_BUZZER };    // Array of deployment pins for charges
 
 /// PIN ASSIGNMENTS FOR DEPLOYMENT CHARGES
-static constexpr int DEPLOYMENT_PINS[] = { 13, 27, 32, 33 };                                                                                      // Array of deployment pins for charges
-static constexpr size_t NUM_DEPLOY_PINS = (sizeof(DEPLOYMENT_PINS) + sizeof(OUTPUT_PINS))/(sizeof(DEPLOYMENT_PINS[0]) + sizeof(OUTPUT_PINS[0]));  // Size of deployment and output pins for the loop
+static constexpr int      DEPLOYMENT_PINS[] = { 13, 27, 32, 33 };                                                                                     // Array of deployment pins for charges
+static constexpr size_t   NUM_DEPLOY_PINS   = (sizeof(DEPLOYMENT_PINS) + sizeof(OUTPUT_PINS))/(sizeof(DEPLOYMENT_PINS[0]) + sizeof(OUTPUT_PINS[0]));  // Size of deployment and output pins for the loop
 
 /// SPIFFS Filename 
 static const char * const SPIFFS_FILENAME = "/data.txt";
