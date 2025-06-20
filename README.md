@@ -21,9 +21,10 @@ Any of the following:
 
 ## Usage
 1. **Dependencies**
-   - `FS.h` — File System
-   - `SPIFFS.h` — SPI Flash File System
-   - `Wire.h` — For I2C communication
-   - `MS5611.h` — For this, you need to use the older version of the library, specifically `1.1.0`
+   - `FS.h` — File System.
+   - `SPIFFS.h` — SPI Flash File System.
+   - `Wire.h` — For I2C communication.
    - `esp_system.h` — required only for those who uses ESP32 micro-controllers since in this code we utilize comprehensive contingecy and reporting methods to debug.
-   - `SimpleKalmanFilter.h` — For altitude smoothing (moving average)
+   - `SimpleKalmanFilter.h` — For altitude smoothing (moving average).
+   - `MS5611.h` — For this, you need to use the older version of the library, specifically `1.1.0`. You can download the library below.
+     - https://github.com/jarzebski/Arduino-MS5611.git)
