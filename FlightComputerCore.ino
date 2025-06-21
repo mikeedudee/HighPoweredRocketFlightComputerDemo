@@ -35,8 +35,8 @@ SOFTWARE.
                                               // or does non-trivial work, we would not run out of stack or flash (initial).
 
 /// MS5611 / ALTITUDE THRESHOLDS
-static constexpr float            ALT_THRESHOLD_GREEN         = 3.0F;               // in meters (simulating liftoff detection)
-static constexpr float            ALT_THRESHOLD_RED           = 5.0F;               // in meters (simulating APOGEE)
+static constexpr float            ALT_THRESHOLD_LAUNCH        = 3.0F;               // in meters (simulating liftoff detection)
+static constexpr float            ALT_THRESHOLD_APOGEE        = 5.0F;               // in meters (simulating APOGEE)
 static constexpr float            ALT_RESET_THRESHOLD         = 2.0F;               // in meters (simulating touchdown detection)
 
 /// TIMING / BUFFER 
@@ -166,7 +166,7 @@ void loop() {
   // Hence, utilize and perfect for this scenario. Memory-wise, switch is not always expecting any return than "if" construct therefore is efficient.
   switch (currentState) {
     case SystemState::BUFFERING: // collecting the first ~3 seconds into buffer; no saves yet
-      if (altitudeFiltered >= ALT_THRESHOLD_GREEN) {
+      if (altitudeFiltered >= ALT_THRESHOLD_LAUNCH) {
         Serial.println("--> ALT >= 3 m: GREEN LED ON (transition BUFFERING → GREEN_SAVING)");
 
         digitalWrite(PIN_GREEN_LED, HIGH);            // Turn ON green LED
@@ -177,7 +177,7 @@ void loop() {
       break;
 
     case SystemState::GREEN_SAVING: // we have already turned green ON and saved the buffer & current once
-      if (altitudeFiltered >= ALT_THRESHOLD_RED) {
+      if (altitudeFiltered >= ALT_THRESHOLD_APOGEE) {
         Serial.println("--> ALT >= 5 m: GREEN→OFF, RED→ON (transition GREEN_SAVING → RED_SAVING)");
         
         digitalWrite(PIN_GREEN_LED, HIGH);  digitalWrite(PIN_RED_LED,   HIGH);    // Transition to RED: turn OFF green, turn ON red
@@ -188,7 +188,7 @@ void loop() {
       break;
 
     case SystemState::RED_SAVING: // continuously save while altitudeFiltered remains >= 5 m
-      if (altitudeFiltered >= ALT_THRESHOLD_RED) {
+      if (altitudeFiltered >= ALT_THRESHOLD_APOGEE) {
         saveDataPoint(currentPt); // Append new data to the memory each loop
 
         // DEPLOY CHARGE PINS ALL AT ONCE
