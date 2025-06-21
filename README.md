@@ -9,9 +9,9 @@ This is a sample or demonstration of a working flight computer for a high-powere
 ---
 
 ## Key variables to change:
- - `ALT_THRESHOLD_GREEN`  = Detection of launch.
- - `ALT_THRESHOLD_RED`    = Detection of Apogee (theoretically based on your calculation).
- - `ALT_RESET_THRESHOLD`  = Detection of prominent touchdown.
+ - `ALT_THRESHOLD_LAUNCH` = Detection of launch.
+ - `ALT_THRESHOLD_APOGEE` = Detection of Apogee (theoretically based on your calculation).
+ - `ALT_RESET_THRESHOLD` = Detection of prominent touchdown.
 
 ## Micro-Controller Compatible
 Any of the following:
