@@ -58,17 +58,3 @@ void addToBuffer(const DataPoint &pt) {
     bufferArray[BUFFER_SIZE-1] = pt;
   }
 }
-
-/// Blink the red LED at a fixed period to indicate a critical error.
-/// This function does not return.
-static void errorBlink() {
-    // Blink forever: 500 ms on, 500 ms off
-    for (;;)
-    {
-        digitalWrite(PIN_RED_LED, HIGH);
-        delay(500);
-
-        digitalWrite(PIN_RED_LED, LOW);
-        delay(500);
-    }
-}
