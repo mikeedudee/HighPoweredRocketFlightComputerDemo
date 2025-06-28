@@ -261,8 +261,6 @@ void loop() {
       currentState = SystemState::STOPPED;
       break;
   }
-
-
 }
 
   // (Optional) Any debug printout for real‐time monitoring:
@@ -271,7 +269,6 @@ void loop() {
     temperature, pressure, altitudeFiltered, static_cast<int>(currentState), now
   );
   
-
   // Delay enforced by the loop‐interval logic above, so no additional delay() here.
   // aaaaaaaaaah go crazy
 }
