@@ -33,21 +33,9 @@ SOFTWARE.
     SimpleKalmanFilter* kaltPtr = nullptr;    // Simple Kalman Filter for altitudeFiltered smoothing
                                               // Invoking and assigning it as nullpointer first incases that if it ever allocates memory 
                                               // or does non-trivial work, we would not run out of stack or flash (initial).
-
-/// MS5611 / ALTITUDE THRESHOLDS
-static constexpr float            ALT_THRESHOLD_LAUNCH        = 3.0F;               // in meters (simulating liftoff detection)
-static constexpr float            ALT_THRESHOLD_APOGEE        = 5.0F;               // in meters (simulating APOGEE)
-static constexpr float            ALT_RESET_THRESHOLD         = 2.0F;               // in meters (simulating touchdown detection)
-
-/// TIMING / BUFFER 
-static constexpr unsigned long    LOOP_INTERVAL_MS            = 300UL;              // main loop interval
-static constexpr unsigned long    RESET_SAVE_PERIOD           = 3000UL;             // 3 seconds after ALT_RESET_THRESHOLD
-static constexpr int              BUFFER_SIZE                 = 10;                 // ten entries * 300 ms = 3 seconds
-
-/// PIN ASSIGNMENTS FOR LED AND BUZZER
-static constexpr int              PIN_GREEN_LED                = 19;                // Pin for Green LED
-static constexpr int              PIN_RED_LED                  = 18;                // Pin for Red LED
-static constexpr int              PIN_BUZZER                   = 4;                 // (unused for now, but reserved)
+                                              
+// Import global variables
+#include <GlobalVariables.h>
 
 static constexpr int OUTPUT_PINS[] = { PIN_GREEN_LED, PIN_RED_LED, PIN_BUZZER };    // Array of deployment pins for charges
 
@@ -60,6 +48,7 @@ static const char * const SPIFFS_FILENAME = "/data.txt";
 
 /// Holds one timestamped “snapshot” from the MS5611.
 struct DataPoint {
+  char           message[64];
   float          temperature;
   long           pressure;
   float          altitudeFiltered;
@@ -111,7 +100,7 @@ void setup() {
   delay(100); 
 
   // Initialize OUTPUT pins
-  // Set all OUTPUT and DEPLOYMENT pins to OUTPUT and LOW initially
+  // Set all OUTPUT and DEPLOYMENT pins to OUTPUT and OFF initially
   for (size_t i = 0; i < NUM_DEPLOY_PINS; ++i) {
       pinMode(DEPLOYMENT_PINS[i], OUTPUT);  digitalWrite(DEPLOYMENT_PINS[i], 0);
       pinMode(OUTPUT_PINS[i],     OUTPUT);  digitalWrite(OUTPUT_PINS[i],     0);
@@ -131,8 +120,8 @@ void setup() {
 }
 
 void loop() {
-  static unsigned long lastLoopTime   = 0UL;
-  unsigned long now                   = millis();
+  static unsigned long  lastLoopTime   = 0UL;
+  unsigned long         now            = millis();
 
   // Enforce a fixed 300 ms loop interval (non‐blocking)
   // This is almost the same with the delay(300) syntax, 
@@ -166,7 +155,7 @@ void loop() {
   // Hence, utilize and perfect for this scenario. Memory-wise, switch is not always expecting any return than "if" construct therefore is efficient.
   switch (currentState) {
     case SystemState::BUFFERING: // collecting the first ~3 seconds into buffer; no saves yet
-      if (altitudeFiltered >= ALT_THRESHOLD_LAUNCH) {
+      if (altitudeFiltered >= ALT_THRESHOLD_GREEN) {
         Serial.println("--> ALT >= 3 m: GREEN LED ON (transition BUFFERING → GREEN_SAVING)");
 
         digitalWrite(PIN_GREEN_LED, HIGH);            // Turn ON green LED
@@ -177,7 +166,7 @@ void loop() {
       break;
 
     case SystemState::GREEN_SAVING: // we have already turned green ON and saved the buffer & current once
-      if (altitudeFiltered >= ALT_THRESHOLD_APOGEE) {
+      if (altitudeFiltered >= ALT_THRESHOLD_RED) {
         Serial.println("--> ALT >= 5 m: GREEN→OFF, RED→ON (transition GREEN_SAVING → RED_SAVING)");
         
         digitalWrite(PIN_GREEN_LED, HIGH);  digitalWrite(PIN_RED_LED,   HIGH);    // Transition to RED: turn OFF green, turn ON red
@@ -188,13 +177,19 @@ void loop() {
       break;
 
     case SystemState::RED_SAVING: // continuously save while altitudeFiltered remains >= 5 m
-      if (altitudeFiltered >= ALT_THRESHOLD_APOGEE) {
+      if (altitudeFiltered >= ALT_THRESHOLD_RED) {
         saveDataPoint(currentPt); // Append new data to the memory each loop
 
         // DEPLOY CHARGE PINS ALL AT ONCE
         for (size_t ch = 0; ch < NUM_DEPLOY_PINS; ++ch) {
             digitalWrite(DEPLOYMENT_PINS[ch], HIGH);
         }
+
+        // TURN OFF ALL DEPLOYMENT PORTS
+        for (size_t ch = 0; ch < NUM_DEPLOY_PINS; ++ch) {
+            digitalWrite(DEPLOYMENT_PINS[ch], LOW);
+        }
+
       }
       else if (altitudeFiltered <= ALT_RESET_THRESHOLD) { // If altitudeFiltered drops to <= 2 m, begin the 3 s “reset countdown”
         Serial.println("--> ALT <= 2 m: GREEN→ON, RED remains ON (entering RESET_COUNTDOWN)");
@@ -223,96 +218,62 @@ void loop() {
       break;
 
     // This helps catch logic bugs in flight and catches any unexpected enum value
-    default:
-      Serial.printf("ERROR: unexpected state %u\n", static_cast<uint8_t>(currentState));
+    default: { 
+      uint8_t stateVal = static_cast<uint8_t>(currentState); // Cast state to integer
+
+      // Format error into a C-string
+      char errorBuf[64];
+      int len = snprintf(
+          errorBuf,
+          sizeof(errorBuf),
+          "Something went wrong during state %u",
+          stateVal
+      );
+
+      // Ensure termination
+      if (len < 0 || len >= static_cast<int>(sizeof(errorBuf))) {
+          // Truncate safely
+          errorBuf[sizeof(errorBuf) - 1] = '\0';
+      }
+
+      // Populate a DataPoint instance
+      DataPoint dp;
+
+      // Copy the formatted message
+      strncpy(dp.message, errorBuf, sizeof(dp.message));
+      dp.message[sizeof(dp.message) - 1] = '\0';
+
+      // Log and save
+      Serial.printf("ERROR: unexpected state %u\n", stateVal);
+      saveDataPoint(dp);
+
+      // DEPLOY CHARGE PINS ALL AT ONCE
+      for (size_t ch = 0; ch < NUM_DEPLOY_PINS; ++ch) {
+          digitalWrite(DEPLOYMENT_PINS[ch], HIGH);
+      }
+
+      // TURN OFF ALL DEPLOYMENT PORTS
+      for (size_t ch = 0; ch < NUM_DEPLOY_PINS; ++ch) {
+          digitalWrite(DEPLOYMENT_PINS[ch], LOW);
+      }
+
+      // Transition to STOPPED
       currentState = SystemState::STOPPED;
-    break;
+      break;
   }
 
-  /*/ (Optional) Any debug printout for real‐time monitoring:
+
+}
+
+  // (Optional) Any debug printout for real‐time monitoring:
   Serial.printf(
     "Temp: %.2f °C | Pressure: %ld Pa | Alt: %.2f m | State: %d | Time: %lu ms\n",
     temperature, pressure, altitudeFiltered, static_cast<int>(currentState), now
-  );*/
+  );
   
 
   // Delay enforced by the loop‐interval logic above, so no additional delay() here.
   // aaaaaaaaaah go crazy
-}
-
-
-/// Initialize SPIFFS. If mount fails, print and halt.
-void initSPIFFS() {
-  if (!SPIFFS.begin(true)) {
-    Serial.println("SPIFFS Mount Failed");
-    while (true) {
-      errorBlink();       // never returns, red LED will blink
-      freeKalmanFilter(); // Free the Kalman filter since we won’t need it any more
-    }
-  }
-  Serial.println("SPIFFS Initialized");
-}
-
-/// Append one DataPoint to "/data.txt" on SPIFFS.  
-void saveDataPoint(const DataPoint &pt) {
-  File file = SPIFFS.open(SPIFFS_FILENAME, FILE_APPEND);
-
-  if (!file) {
-    Serial.println("Failed to open data.txt for appending");
-    errorBlink();
-    return;
-  }
-
-  // Format: temperature (float), pressure (long), altitudeFiltered (float), timestamp (ulong)
-  file.printf(
-    "%.2f %ld %.2f %lu\n",
-    pt.temperature,
-    pt.pressure,
-    pt.altitudeFiltered,
-    pt.timestamp
-  );
-  file.close();
-}
-
-/// Write all buffered samples to SPIFFS, then reset the buffer.
-void flushBufferToSPIFFS() {
-  int count = bufferIsFull ? BUFFER_SIZE : bufferIndex;
-  Serial.println("Flushing buffer:");
-  for (int i = 0; i < count; i++) {
-    saveDataPoint(bufferArray[i]);
-  }
-  // Reset buffer pointers:
-  bufferIndex  = 0; bufferIsFull = false;
-}
-
-/// Insert one DataPoint into the circular buffer.
-///   - If buffer not yet full, store at bufferIndex++.
-///   - Once bufferIndex == BUFFER_SIZE, set bufferIsFull = true and
-///     shift all contents one place left on each subsequent insertion.
-void addToBuffer(const DataPoint &pt) {
-  if (!bufferIsFull) {
-      bufferArray[bufferIndex++] = pt;
-      if (bufferIndex >= BUFFER_SIZE) bufferIsFull = true;
-  } else {
-    // Shift everything left by one, then append new at the end
-    // We use memmove since its more efficient and this single call is both clearer and faster on a microcontrollers.
-    memmove(bufferArray, bufferArray + 1, sizeof(DataPoint)*(BUFFER_SIZE-1));
-    bufferArray[BUFFER_SIZE-1] = pt;
-  }
-}
-
-/// Blink the red LED at a fixed period to indicate a critical error.
-/// This function does not return.
-static void errorBlink() {
-    // Blink forever: 500 ms on, 500 ms off
-    for (;;)
-    {
-        digitalWrite(PIN_RED_LED, HIGH);
-        delay(500);
-
-        digitalWrite(PIN_RED_LED, LOW);
-        delay(500);
-    }
 }
 
 /// Clean up function of the pointer of the Kalman Filter.
