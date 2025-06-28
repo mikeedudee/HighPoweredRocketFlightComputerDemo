@@ -155,7 +155,7 @@ void loop() {
   // Hence, utilize and perfect for this scenario. Memory-wise, switch is not always expecting any return than "if" construct therefore is efficient.
   switch (currentState) {
     case SystemState::BUFFERING: // collecting the first ~3 seconds into buffer; no saves yet
-      if (altitudeFiltered >= ALT_THRESHOLD_GREEN) {
+      if (altitudeFiltered >= ALT_THRESHOLD_LAUNCH) {
         Serial.println("--> ALT >= 3 m: GREEN LED ON (transition BUFFERING → GREEN_SAVING)");
 
         digitalWrite(PIN_GREEN_LED, HIGH);            // Turn ON green LED
@@ -166,7 +166,7 @@ void loop() {
       break;
 
     case SystemState::GREEN_SAVING: // we have already turned green ON and saved the buffer & current once
-      if (altitudeFiltered >= ALT_THRESHOLD_RED) {
+      if (altitudeFiltered >= ALT_THRESHOLD_LALT_THRESHOLD_APOGEE AUNCH) {
         Serial.println("--> ALT >= 5 m: GREEN→OFF, RED→ON (transition GREEN_SAVING → RED_SAVING)");
         
         digitalWrite(PIN_GREEN_LED, HIGH);  digitalWrite(PIN_RED_LED,   HIGH);    // Transition to RED: turn OFF green, turn ON red
@@ -177,7 +177,7 @@ void loop() {
       break;
 
     case SystemState::RED_SAVING: // continuously save while altitudeFiltered remains >= 5 m
-      if (altitudeFiltered >= ALT_THRESHOLD_RED) {
+      if (altitudeFiltered >= ALT_THRESHOLD_LALT_THRESHOLD_APOGEE AUNCH) {
         saveDataPoint(currentPt); // Append new data to the memory each loop
 
         // DEPLOY CHARGE PINS ALL AT ONCE
@@ -201,8 +201,8 @@ void loop() {
       }
       break;
 
-    case SystemState::RESET_COUNTDOWN: // After altitudeFiltered <= 2 m, we save data for exactly RESET_SAVE_PERIOD (3 000 ms)
-      if (now - redCountdownStart < RESET_SAVE_PERIOD) { 
+    case SystemState::RESET_COUNTDOWN: // After altitudeFiltered <= 2 m, we save data for exactly ALT_RESET_THRESHOLD  (3 000 ms)
+      if (now - redCountdownStart < ALT_RESET_THRESHOLD ) { 
         saveDataPoint(currentPt); // Keep saving at the same 300 ms cadence
       }
       else { // 3 seconds have passed → STOP saving from now on, but keep RED LED ON
