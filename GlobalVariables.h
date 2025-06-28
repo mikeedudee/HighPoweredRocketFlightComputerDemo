@@ -2,9 +2,9 @@
 #define GLOBALVARIABLES_H
 
 /// MS5611 / ALTITUDE THRESHOLDS
-static constexpr float            ALT_THRESHOLD_GREEN         = 3.0F;               // in meters (simulating liftoff detection)
-static constexpr float            ALT_THRESHOLD_RED           = 5.0F;               // in meters (simulating APOGEE)
-static constexpr float            ALT_RESET_THRESHOLD         = 2.0F;               // in meters (simulating touchdown detection)
+static constexpr float            ALT_THRESHOLD_LAUNCH         = 3.0F;               // in meters (simulating liftoff detection)
+static constexpr float            ALT_THRESHOLD_APOGE          = 5.0F;               // in meters (simulating APOGEE)
+static constexpr float            ALT_RESET_THRESHOLD          = 2.0F;               // in meters (simulating touchdown detection)
 
 /// TIMING / BUFFER 
 static constexpr unsigned long    LOOP_INTERVAL_MS            = 300UL;              // main loop interval
