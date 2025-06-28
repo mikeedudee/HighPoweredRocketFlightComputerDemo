@@ -37,7 +37,7 @@ SOFTWARE.
 // Import global variables
 #include <GlobalVariables.h>
 
-static constexpr int OUTPUT_PINS[] = { PIN_GREEN_LED, PIN_RED_LED, PIN_BUZZER };    // Array of deployment pins for charges
+static constexpr int OUTPUT_PINS[] = { PIN_GREEN_LED, PIN_RED_LED, PIN_BUZZER };    // Dictionary for LED and Buzzer pins
 
 /// PIN ASSIGNMENTS FOR DEPLOYMENT CHARGES
 static constexpr int      DEPLOYMENT_PINS[] = { 13, 27, 32, 33 };                                                                                     // Array of deployment pins for charges
