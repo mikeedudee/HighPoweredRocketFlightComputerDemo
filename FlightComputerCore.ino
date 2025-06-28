@@ -106,14 +106,19 @@ void setup() {
       pinMode(OUTPUT_PINS[i],     OUTPUT);  digitalWrite(OUTPUT_PINS[i],     0);
   }
 
-  // Initialize the MS5611 barometric sensor
-  if (!ms5611.begin()) {
+  // Initialize the MS5611 sensor
+  // Ultra high resolution: MS5611_ULTRA_HIGH_RES
+  // (default) High resolution: MS5611_HIGH_RES
+  // Standard: MS5611_STANDARD
+  // Low power: MS5611_LOW_POWER
+  // Ultra low power: MS5611_ULTRA_LOW_POWER
+  if (!ms5611.begin(MS5611_HIGH_RES)) {
     Serial.println("MS5611 initialization failed!");
     while (true) {
-      errorBlink();
+      errorBlink(); // WHen the sensor fails to initialize, blink the RED LED
     }
   }
-
+    
   delay(1000);
 
   referencePressure = ms5611.readPressure();  // baseline pressure
