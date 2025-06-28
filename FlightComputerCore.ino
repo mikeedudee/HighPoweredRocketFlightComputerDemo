@@ -106,19 +106,14 @@ void setup() {
       pinMode(OUTPUT_PINS[i],     OUTPUT);  digitalWrite(OUTPUT_PINS[i],     0);
   }
 
-  // Initialize the MS5611 sensor
-  // Ultra high resolution: MS5611_ULTRA_HIGH_RES
-  // (default) High resolution: MS5611_HIGH_RES
-  // Standard: MS5611_STANDARD
-  // Low power: MS5611_LOW_POWER
-  // Ultra low power: MS5611_ULTRA_LOW_POWER
-  if (!ms5611.begin(MS5611_HIGH_RES)) {
+  // Initialize the MS5611 barometric sensor
+  if (!ms5611.begin()) {
     Serial.println("MS5611 initialization failed!");
     while (true) {
-      errorBlink(); // WHen the sensor fails to initialize, blink the RED LED
+      errorBlink();
     }
   }
-    
+
   delay(1000);
 
   referencePressure = ms5611.readPressure();  // baseline pressure
@@ -171,7 +166,7 @@ void loop() {
       break;
 
     case SystemState::GREEN_SAVING: // we have already turned green ON and saved the buffer & current once
-      if (altitudeFiltered >= ALT_THRESHOLD_LALT_THRESHOLD_APOGEE AUNCH) {
+      if (altitudeFiltered >= ALT_THRESHOLD_APOGEE) {
         Serial.println("--> ALT >= 5 m: GREEN→OFF, RED→ON (transition GREEN_SAVING → RED_SAVING)");
         
         digitalWrite(PIN_GREEN_LED, HIGH);  digitalWrite(PIN_RED_LED,   HIGH);    // Transition to RED: turn OFF green, turn ON red
@@ -182,7 +177,7 @@ void loop() {
       break;
 
     case SystemState::RED_SAVING: // continuously save while altitudeFiltered remains >= 5 m
-      if (altitudeFiltered >= ALT_THRESHOLD_LALT_THRESHOLD_APOGEE AUNCH) {
+      if (altitudeFiltered >= ALT_THRESHOLD_APOGEE) {
         saveDataPoint(currentPt); // Append new data to the memory each loop
 
         // DEPLOY CHARGE PINS ALL AT ONCE
@@ -206,8 +201,8 @@ void loop() {
       }
       break;
 
-    case SystemState::RESET_COUNTDOWN: // After altitudeFiltered <= 2 m, we save data for exactly ALT_RESET_THRESHOLD  (3 000 ms)
-      if (now - redCountdownStart < ALT_RESET_THRESHOLD ) { 
+    case SystemState::RESET_COUNTDOWN: // After altitudeFiltered <= 2 m, we save data for exactly ALT_RESET_THRESHOLD (3 000 ms)
+      if (now - redCountdownStart < ALT_RESET_THRESHOLD) { 
         saveDataPoint(currentPt); // Keep saving at the same 300 ms cadence
       }
       else { // 3 seconds have passed → STOP saving from now on, but keep RED LED ON
@@ -266,6 +261,8 @@ void loop() {
       currentState = SystemState::STOPPED;
       break;
   }
+
+
 }
 
   // (Optional) Any debug printout for real‐time monitoring:
@@ -274,6 +271,7 @@ void loop() {
     temperature, pressure, altitudeFiltered, static_cast<int>(currentState), now
   );
   
+
   // Delay enforced by the loop‐interval logic above, so no additional delay() here.
   // aaaaaaaaaah go crazy
 }
